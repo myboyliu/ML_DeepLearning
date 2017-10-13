@@ -1,0 +1,18 @@
+# Created by .ignore support plugin (hsz.mobi)
+# Created by .ignore support plugin (hsz.mobi)
+*#*#
+*.#*
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+*.pyc
+CommonModules/__pycache__/
+.DS_Store
+*.npz
+*.weights
+*.local
+Total_Data/
+*/logs/*
+
