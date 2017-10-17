@@ -18,3 +18,6 @@ def accuracyFunction(logits, label, *data):
 if __name__ == '__main__':
     zknet = zkNet('vgg16.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
     zknet.train()
+
+
+

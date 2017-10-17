@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<root>
+    <TrainConfig>
+        <optimizer>adam</optimizer>
+        <learning_rate>
+            <type>exp</type>
+            <init>0.1</init>
+            <decay_steps>1000</decay_steps>
+            <decay_rate>0.01</decay_rate>
+        </learning_rate>
+        <gpu_num>2</gpu_num>
+        <epoch>1000</epoch>
+        <dataType>flower</dataType>
+        <dataPath>../Total_Data/flowers17_299/</dataPath>
+        <isSaveNpzFile>1</isSaveNpzFile>
+        <NpzFileName>flowers.npz</NpzFileName>
+        <n_classes>17</n_classes>
+    </TrainConfig>
+    <NetConfig>
+        <Layer type="inp" size="299" channel="3" batch_size="36"/>
+
+        <Layer type="con" n_filter="32" filter_size="3,3" strides="2,2" padding="VALID"/>
+        <Layer type="con" n_filter="32" filter_size="3,3" padding="VALID"/>
+        <Layer type="con" n_filter="64" filter_size="3,3"/>
+        <Layer type="max" filter_size="3,3" strides="2,2" padding="VALID"/>
+
+        <Layer type="con" n_filter="80" padding="VALID"/>
+        <Layer type="con" n_filter="192" filter_size="3,3" padding="VALID"/>
+        <Layer type="max" filter_size="3,3" strides="2,2" padding="VALID"/>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="64"/>
+            <Layer>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="con" n_filter="64" filter_size="5,5"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="64"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="32" />
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="64"/>
+            <Layer>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="con" n_filter="64" filter_size="5,5"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="64"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="64" />
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="64"/>
+            <Layer>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="con" n_filter="64" filter_size="5,5"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="64"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="64" />
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="384" filter_size="3,3" strides="2,2" padding="VALID"/>
+            <Layer>
+                <Layer type="con" n_filter="64"/>
+                <Layer type="con" n_filter="96" filter_size="3,3"/>
+                <Layer type="con" n_filter="96" filter_size="3,3" strides="2,2" padding="VALID"/>
+            </Layer>
+            <Layer type="max" filter_size="3,3" strides="2,2" padding="VALID"/>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="192"/>
+            <Layer>
+                <Layer type="con" n_filter="128"/>
+                <Layer type="con" n_filter="128" filter_size="1,7"/>
+                <Layer type="con" n_filter="192" filter_size="7,1"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="128"/>
+                <Layer type="con" n_filter="128" filter_size="7,1"/>
+                <Layer type="con" n_filter="128" filter_size="1,7"/>
+                <Layer type="con" n_filter="128" filter_size="7,1"/>
+                <Layer type="con" n_filter="192" filter_size="1,7"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="192"/>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="192" filter_size="7,1"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="192" filter_size="1,7"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="192"/>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="192" filter_size="7,1"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="192" filter_size="1,7"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="192"/>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="192" filter_size="7,1"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="160"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="160" filter_size="1,7"/>
+                <Layer type="con" n_filter="160" filter_size="7,1"/>
+                <Layer type="con" n_filter="192" filter_size="1,7"/>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer>
+                <Layer type="con" n_filter="192"/>
+                <Layer type="con" n_filter="320" filter_size="3,3" strides="2,2" padding="VALID"/>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="192"/>
+                <Layer type="con" n_filter="192" filter_size="1,7"/>
+                <Layer type="con" n_filter="192" filter_size="7,1"/>
+                <Layer type="con" n_filter="192" filter_size="3,3" strides="2,2" padding="VALID"/>
+            </Layer>
+            <Layer type="max" filter_size="3,3" strides="2,2" padding="VALID" />
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="320" />
+            <Layer>
+                <Layer type="con" n_filter="384"/>
+                <Layer type="ewl" combine="concat">
+                    <Layer type="con" n_filter="384" filter_size="1,3"/>
+                    <Layer type="con" n_filter="384" filter_size="3,1"/>
+                </Layer>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="448"/>
+                <Layer type="con" n_filter="384" filter_size="3,3"/>
+                <Layer type="ewl">
+                    <Layer type="con" n_filter="384" filter_size="1,3"/>
+                    <Layer type="con" n_filter="384" filter_size="3,1"/>
+                </Layer>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="con" n_filter="320" />
+            <Layer>
+                <Layer type="con" n_filter="384"/>
+                <Layer type="ewl" combine="concat">
+                    <Layer type="con" n_filter="384" filter_size="1,3"/>
+                    <Layer type="con" n_filter="384" filter_size="3,1"/>
+                </Layer>
+            </Layer>
+            <Layer>
+                <Layer type="con" n_filter="448"/>
+                <Layer type="con" n_filter="384" filter_size="3,3"/>
+                <Layer type="ewl">
+                    <Layer type="con" n_filter="384" filter_size="1,3"/>
+                    <Layer type="con" n_filter="384" filter_size="3,1"/>
+                </Layer>
+            </Layer>
+            <Layer>
+                <Layer type="avg" filter_size="3,3"/>
+                <Layer type="con" n_filter="192"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="con" filter_size="8,8" padding="VALID"/>
+        <Layer type="fla"/>
+        <Layer type="drp" keep="0.5"/>
+        <Layer type="ful" n_units="17" act="identity"/>
+    </NetConfig>
+</root>

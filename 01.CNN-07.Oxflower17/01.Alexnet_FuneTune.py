@@ -4,9 +4,13 @@ import tensorlayer as tl
 from PIL import Image
 import tflearn
 import numpy as np
-IMAGE_SIZE = 224
-IMAGE_CHANNEL = 3
-def lossfunction(logits, label):
+IMAGE_SIZE = 0
+IMAGE_CHANNEL = 0
+def lossfunction(logits, label, *data):
+    global IMAGE_SIZE
+    IMAGE_SIZE = data[0]['image_size']
+    global IMAGE_CHANNEL
+    IMAGE_CHANNEL = data[0]['image_channel']
     print('call my loss...')
     ce = tl.cost.cross_entropy(logits, label, name='cost')
     L2 = 0
@@ -16,7 +20,7 @@ def lossfunction(logits, label):
 
     return ce + L2
 
-def accuracyFunction(logits, label):
+def accuracyFunction(logits, label, *data):
     return tf.reduce_mean(tf.cast(tf.nn.in_top_k(predictions=logits, targets=label, k=1), tf.float32))
 
 def predFunction(outputs):
@@ -38,7 +42,7 @@ def image_proposal(img_path):
     return image_arr.reshape([IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNEL])
 
 if __name__ == '__main__':
-    zknet = zkNet('alexnet.cfg', LossFunc=lossfunction, AccFunc=accuracyFunction)
+    zknet = zkNet('alexnet_funetune.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
     zknet.train()
     image_predict = image_proposal("test.png")
     print(zknet.predict(image_predict, predFunc=predFunction))

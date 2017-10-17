@@ -2,7 +2,12 @@ from zknet.zkNet import zkNet
 import tensorflow as tf
 import tensorlayer as tl
 
-def lossfunction(logits, label, *data):
+def lossfunction(logits, label,*data):
+    # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label,
+    #                                                                logits=logits)
+    # total_loss_op = tf.reduce_mean(cross_entropy)
+    # return total_loss_op
+
     print('call my loss...')
     ce = tl.cost.cross_entropy(logits, label, name='cost')
     L2 = 0
@@ -12,9 +17,12 @@ def lossfunction(logits, label, *data):
 
     return ce + L2
 
-def accuracyFunction(logits, label, *data):
+def accuracyFunction(logits, label,*data):
     return tf.reduce_mean(tf.cast(tf.nn.in_top_k(predictions=logits, targets=label, k=1), tf.float32))
 
 if __name__ == '__main__':
-    zknet = zkNet('vgg16.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
+    zknet = zkNet('alexnet.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
     zknet.train()
+
+
+

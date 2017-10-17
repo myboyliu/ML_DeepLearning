@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<root>
+    <TrainConfig>
+        <label_shape>7,7,25</label_shape>
+        <optimizer>gra</optimizer>
+        <learning_rate>
+            <type>exp</type>
+            <init>0.1</init>
+            <decay_steps>1000</decay_steps>
+            <decay_rate>0.001</decay_rate>
+        </learning_rate>
+        <gpu_num>2</gpu_num>
+        <epoch>20</epoch>
+        <dataType>voc</dataType>
+        <dataPath>../Total_Data/voc2007/</dataPath>
+        <isSaveNpzFile>1</isSaveNpzFile>
+        <NpzFileName>yolov1.npz</NpzFileName>
+        <n_classes>20</n_classes>
+        <cell_size>7</cell_size>
+        <boxes_per_cell>2</boxes_per_cell>
+        <class_scale>2.0</class_scale>
+        <object_scale>1.0</object_scale>
+        <noobject_scale>1.0</noobject_scale>
+        <coord_scale>5.0</coord_scale>
+    </TrainConfig>
+    <NetConfig>
+        <Layer type="inp" size="448" channel="3" batch_size="45"/>
+
+        <Layer type="pad" padding="0,0;3,3;3,3;0,0"/>
+
+        <Layer type="con" n_filter="64" filter_size="7,7" strides="2,2" padding="VALID" act="elu" w_stddev="0.01"/>
+        <Layer type="max" filter_size="3,3" strides="2,2"/>
+        <Layer type="con" n_filter="192" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
+        <Layer type="con" n_filter="128" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="256" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="256" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
+        <Layer type="con" n_filter="256" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="256" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="256" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="256" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
+        <Layer type="con" n_filter="512" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="512" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+
+        <Layer type="pad" padding="0,0;1,1;1,1;0,0" />
+        <Layer type="con" n_filter="1024" filter_size="3,3" strides="2,2" padding="VALID" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="con" n_filter="1024" filter_size="3,3" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+
+        <Layer type="tra" perm="0,3,1,2"/>
+        <Layer type="fla"/>
+
+        <Layer type="ful" n_units="1024" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="ful" n_units="4096" act="leaky_relu" act_alpha="0.1" w_stddev="0.01"/>
+        <Layer type="drp" keep="0.5"/>
+
+        <Layer type="ful" n_units="1470" act="identity" w_stddev="0.01"/>
+    </NetConfig>
+</root>

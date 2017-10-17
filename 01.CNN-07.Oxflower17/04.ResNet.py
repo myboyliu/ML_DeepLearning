@@ -2,7 +2,7 @@ from zknet.zkNet import zkNet
 import tensorflow as tf
 import tensorlayer as tl
 
-def lossfunction(logits, label):
+def lossfunction(logits, label, *data):
     print('call my loss...')
     ce = tl.cost.cross_entropy(logits, label, name='cost')
     L2 = 0
@@ -12,11 +12,11 @@ def lossfunction(logits, label):
 
     return ce + L2
 
-def accuracyFunction(logits, label):
+def accuracyFunction(logits, label, *data):
     return tf.reduce_mean(tf.cast(tf.nn.in_top_k(predictions=logits, targets=label, k=1), tf.float32))
 
 if __name__ == '__main__':
-    zknet = zkNet('ResNet.cfg', LossFunc=lossfunction, AccFunc=accuracyFunction)
+    zknet = zkNet('ResNet.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
     zknet.train()
 
 

@@ -75,7 +75,7 @@ class CifarReader(Reader):
         return (image_train,label_train), (image_test, label_test)
 class MnistReader(Reader):
     def __init__(self, meta):
-        super(MnistReader,self).__init__()
+        super(MnistReader,self).__init__(meta)
         self.trainFileList = [os.path.join(self.dataPath, "train_%d.tfrecords" % i) for i in range(1)]
         self.testFileList = [os.path.join(self.dataPath, "test_%d.tfrecords" % i) for i in range(1)]
         self.trainRecordCount = 60000
@@ -124,6 +124,50 @@ class CatDogReader(Reader):
         self.testFileList = [os.path.join(self.dataPath, "test_%d.tfrecords" % i) for i in range(1)]
         self.trainRecordCount = 25000
         self.testRecordCount = 1300
+    def readData(self):
+        image_train, label_train = readFromTFRecords(self.trainFileList, batch_size=self.meta['batch_size'],
+                                                     img_shape=[
+                                                         self.meta['image_size'],
+                                                         self.meta['image_size'],
+                                                         self.meta['image_channel']
+                                                     ])
+        image_test, label_test = readFromTFRecords(self.testFileList, batch_size=self.meta['batch_size'],
+                                                   img_shape=[
+                                                       self.meta['image_size'],
+                                                       self.meta['image_size'],
+                                                       self.meta['image_channel']
+                                                   ])
+        return (image_train,label_train), (image_test, label_test)
+
+class Voc2007Reader(Reader):
+    def __init__(self, meta):
+        super(Voc2007Reader, self).__init__(meta)
+        self.trainFileList = [os.path.join(self.dataPath, "train_%d.tfrecords" % i) for i in range(6)]
+        self.testFileList = [os.path.join(self.dataPath, "test_%d.tfrecords" % i) for i in range(5)]
+        self.trainRecordCount = 25000
+        self.testRecordCount = 1300
+    def readData(self):
+        image_train, label_train = readFromTFRecords(self.trainFileList, batch_size=self.meta['batch_size'],
+                                                     img_shape=[
+                                                         self.meta['image_size'],
+                                                         self.meta['image_size'],
+                                                         self.meta['image_channel']
+                                                     ])
+        image_test, label_test = readFromTFRecords(self.testFileList, batch_size=self.meta['batch_size'],
+                                                   img_shape=[
+                                                       self.meta['image_size'],
+                                                       self.meta['image_size'],
+                                                       self.meta['image_channel']
+                                                   ])
+        return (image_train,label_train), (image_test, label_test)
+
+class STLReader(Reader):
+    def __init__(self, meta):
+        super(STLReader,self).__init__(meta)
+        self.trainFileList = [os.path.join(self.dataPath, "train_%d.tfrecords" % i) for i in range(1)]
+        self.testFileList = [os.path.join(self.dataPath, "test_%d.tfrecords" % i) for i in range(2)]
+        self.trainRecordCount = 500
+        self.testRecordCount = 800
     def readData(self):
         image_train, label_train = readFromTFRecords(self.trainFileList, batch_size=self.meta['batch_size'],
                                                      img_shape=[

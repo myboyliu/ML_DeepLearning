@@ -1,4 +1,5 @@
-from zkreader.Reader import Reader, CifarReader, MnistReader, Oxflower17Reader, CatDogReader
+from zkreader.Reader import Reader, CifarReader, MnistReader, Oxflower17Reader,\
+    CatDogReader, Voc2007Reader, STLReader
 
 readOpt = {
     "cifar10" : CifarReader,
@@ -6,7 +7,9 @@ readOpt = {
     "cifar100" : CifarReader,
     "mnist" : MnistReader,
     "flower" : Oxflower17Reader,
-    "catdog" : CatDogReader
+    "catdog" : CatDogReader,
+    "voc" : Voc2007Reader,
+    "stl" : STLReader
 }
 
 def reader_new(meta):
