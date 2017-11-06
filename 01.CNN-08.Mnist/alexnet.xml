@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<root>
+    <TrainConfig>
+        <optimizer>adam</optimizer>
+        <learning_rate>0.0001</learning_rate>
+        <gpu_num>0</gpu_num>
+        <epoch>3</epoch>
+        <dataType>mnist</dataType>
+        <dataPath>../Total_Data/mnist/</dataPath>
+        <isSaveNpzFile>1</isSaveNpzFile>
+        <NpzFileName>mnist.npz</NpzFileName>
+        <n_classes>10</n_classes>
+    </TrainConfig>
+    <NetConfig>
+        <Layer type="inp" size="28" channel="1" batch_size="128"/>
+        <Layer type="bnl"/>
+        <Layer type="drp" keep="0.8"/>
+        <!--<Layer type="con" n_filter="800"/>-->
+        <!--<Layer type="drp" keep="0.5"/>-->
+        <!--<Layer type="con" n_filter="800"/>-->
+        <!--<Layer type="drp" keep="0.5"/>-->
+        <Layer type="fla"/>
+        <Layer type="ful" n_units="800"/>
+        <!--<Layer type="bnl"/>-->
+        <Layer type="drp" keep="0.5"/>
+        <Layer type="ful" n_units="800"/>
+        <Layer type="drp" keep="0.5"/>
+        <Layer type="ful" n_units="10" act="identity"/>
+    </NetConfig>
+</root>

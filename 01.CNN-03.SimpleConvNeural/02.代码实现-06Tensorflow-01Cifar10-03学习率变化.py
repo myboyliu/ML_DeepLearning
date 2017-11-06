@@ -11,7 +11,7 @@ learning_rate_init = 0.1
 learning_rate_final = 0.001
 learning_rate_decay_rate = 0.5
 num_batches_per_epoch = int(num_examples_per_epoch_for_train / batch_size)
-num_epochs_per_decay = 1 # 每次过多少个epoch，学习率就会降低
+num_epochs_per_decay = 2 # 每次过多少个epoch，学习率就会降低
 learning_rate_decay_steps = int(num_batches_per_epoch * num_epochs_per_decay)
 
 with tf.Graph().as_default():
@@ -28,14 +28,17 @@ with tf.Graph().as_default():
     results_list = list()
     results_list.append(['train_step', 'learning_rate', 'train_step', 'train_loss'])
     with tf.Session() as sess:
+        current_learning_rate = learning_rate_init
         sess.run(init_op)
         for epoch in range(training_epochs):
+
             print('***************************')
+            print("Training Epoch: " + str(epoch) + ", Learning Rate=" + "{:.6f}".format(current_learning_rate))
             for batch_idx in range(num_batches_per_epoch):
                 current_learning_rate = sess.run(learning_rate)
                 _, loss_value, training_step = sess.run([training_op, myloss, global_step])
-                print("Training Epoch: " + str(epoch) +
-                      ", Training Step: " + str(training_step) +
-                      ", Learning Rate=" + "{:.6f}".format(current_learning_rate) +
-                      ", Training_Loss=" + "{:.6f}".format(loss_value))
+                # print("Training Epoch: " + str(epoch) +
+                #       ", Training Step: " + str(training_step) +
+                #       ", Learning Rate=" + "{:.6f}".format(current_learning_rate) +
+                #       ", Training_Loss=" + "{:.6f}".format(loss_value))
                 results_list.append([training_step, current_learning_rate, training_step, loss_value])

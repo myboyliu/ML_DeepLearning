@@ -2,8 +2,8 @@ import tensorflow as tf
 import tensorlayer as tl
 
 def PrintLog(tensor, *data):
-    print("[JJZHK] Input Tensor Shape : %s" % tensor.get_shape())
-
+    # print("[JJZHK] Input Tensor Shape : %s" % tensor.get_shape())
+    pass
 class zkLayer(object):
     def __init__(self, *args):
         self.name = args[0]
@@ -12,7 +12,7 @@ class zkLayer(object):
     def setup(self):
         pass
 
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         pass
 
 class InputLayer(zkLayer):
@@ -24,7 +24,7 @@ class InputLayer(zkLayer):
         self.size = size
         self.batch_size = batch_size
         self.channel = channel
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput)
         return tl.layers.InputLayer(layerInput, name=self.name)
 
@@ -34,7 +34,7 @@ class PadLayer(zkLayer):
 
         self.padding = self.padding.split(';')
         self.padding = [[int(j) for j in i.split(',')] for i in self.padding]
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         # PrintLog(layerInput)
         return tl.layers.PadLayer(layerInput, paddings=self.padding, name=self.name)
 
@@ -68,7 +68,7 @@ class ConvLayer(zkLayer):
         else:
             self.data['act'] = getattr(tf.nn, self.data['act']) if self.data['act'] != "identity" else getattr(tf, "identity")
 
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.Conv2d(layerInput, n_filter=self.data['n_filter'],
                                 filter_size=self.data['filter_size'],
@@ -94,7 +94,7 @@ class LrnLayer(zkLayer):
         self.data['bias'] = float(self.data['bias'])
         self.data['alpha'] = float(eval(self.data['alpha']))
         self.data['beta'] = float(self.data['beta'])
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.LocalResponseNormLayer(layerInput, depth_radius=self.data['depth_radius'], bias=self.data['bias'],
                                                 alpha=self.data['alpha'], beta=self.data['beta'], name=self.name)
@@ -112,7 +112,7 @@ class MaxPoolLayer(zkLayer):
                 self.data[key] = defaultValue
         self.data['filter_size'] = tuple(map(int, self.data['filter_size'].split(',')))
         self.data['strides'] = tuple(map(int, self.data['strides'].split(',')))
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.MaxPool2d(layerInput, filter_size=self.data['filter_size'],
                                    strides=self.data['strides'], padding=self.data['padding'],
@@ -120,7 +120,7 @@ class MaxPoolLayer(zkLayer):
 class FlattenLayer(zkLayer):
     def setup(self):
         pass
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.FlattenLayer(layerInput, name=self.name)
 
@@ -150,7 +150,7 @@ class FullyConnectLayer(zkLayer):
         else:
             self.data['act'] = getattr(tf.nn, self.data['act']) if self.data['act'] != "identity" else getattr(tf, "identity")
 
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.DenseLayer(layerInput, n_units=self.data['n_units'], act=self.data['act'],
                                     W_init=tf.truncated_normal_initializer(mean=self.data['w_mean'], stddev=self.data['w_stddev']),
@@ -166,7 +166,7 @@ class DropOutLayer(zkLayer):
             if key not in self.data:
                 self.data[key] = defaultValue
         self.data['keep'] = float(self.data['keep'])
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.DropoutLayer(layerInput, keep=self.data['keep'],
                                       is_fix=True,
@@ -185,7 +185,7 @@ class AvergePoolLayer(zkLayer):
                 self.data[key] = defaultValue
         self.data['filter_size'] = tuple(map(int, self.data['filter_size'].split(',')))
         self.data['strides'] = tuple(map(int, self.data['strides'].split(',')))
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.MeanPool2d(layerInput, filter_size=self.data['filter_size'],
                                    strides=self.data['strides'], padding=self.data['padding'],
@@ -206,7 +206,7 @@ class MergeLayer(zkLayer):
     def addSubLayers(self, layer):
         self.subLayers.append(layer)
 
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         list_layer = []
         for layer in self.subLayers:
@@ -221,6 +221,7 @@ class MergeLayer(zkLayer):
 
                 list_layer.append(subinput)
         if self.data['combine'] == tf.concat:
+
             return tl.layers.ConcatLayer(layer=list_layer, concat_dim=3, name=self.name)
         else:
             return tl.layers.ElementwiseLayer(layer=list_layer, combine_fn=self.data['combine'], name=self.name)
@@ -238,7 +239,7 @@ class ResnetLayer(zkLayer):
         self.data['n_filter'] = int(self.data['n_filter'])
         self.data['count'] = int(self.data['count'])
         self.data['subsample_factor'] = int(self.data['subsample_factor'])
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return self.Residual_layer(layerInput, self.data['count'], self.data['n_filter'],
                                    self.data['subsample_factor'])
@@ -292,6 +293,39 @@ class ResnetLayer(zkLayer):
         pattern = [[0, 0], [0, 0], [0, 0], [pad - pad // 2, pad // 2]]
         return tf.pad(x, pattern)
 
+class ResnetLayer2(zkLayer):
+    default_value = [['shape',[16,16]],
+                     ['increase_filter', False]]
+    def setup(self):
+        for v in self.default_value:
+            key = v[0]
+            defaultValue = v[1]
+            if key not in self.data:
+                self.data[key] = defaultValue
+        self.data['shape'] = list(map(int, self.data['shape'].split(',')))
+        self.data['increase_filter'] = bool(self.data['increase_filter'])
+    def forward(self, layerInput, *meta):
+        PrintLog(layerInput.outputs)
+        return self.Residual_layer(layerInput, self.data['shape'])
+
+    def Residual_layer(self, x,shape,increase_filter=False):
+        output_filter_num = shape[1]
+        if increase_filter:
+            first_stride = (2,2)
+        else:
+            first_stride = (1,1)
+
+        pre_relu   = tl.layers.BatchNormLayer(x, act=tf.nn.relu, name=self.name + '_bat1')
+        conv_1 = tl.layers.Conv2d(pre_relu, n_filter=output_filter_num, filter_size=(3,3), strides=first_stride, padding='SAME', name=self.name + '_con1')
+        relu1   = tl.layers.BatchNormLayer(conv_1, act=tf.nn.relu, name=self.name+'_bat2')
+        conv_2 =tl.layers.Conv2d(relu1, n_filter=output_filter_num, filter_size=(3,3), strides=first_stride, padding='SAME', name=self.name + "_con2")
+        if increase_filter:
+            projection = tl.layers.Conv2d(relu1, n_filter=output_filter_num, filter_size=(3,3), strides=first_stride, padding='SAME', name=self.name+"_con3")
+            block = tl.layers.ConcatLayer(layer=[conv_2, projection], concat_dim=3, name=self.name + "_mer1")
+        else:
+            block = tl.layers.ConcatLayer(layer=[conv_2, x], concat_dim=3, name=self.name + "_mer2")
+        return block
+
 class BatchNormLayer(zkLayer):
     default_value = [['decay',0.9],
                      ['epsilon', 0.00001],
@@ -310,15 +344,39 @@ class BatchNormLayer(zkLayer):
             self.data['act'] = lambda x : tl.act.leaky_relu(x, alpha=self.data['act_alpha'])
         else:
             self.data['act'] = getattr(tf.nn, self.data['act']) if self.data['act'] != "identity" else getattr(tf, "identity")
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.BatchNormLayer(layer=layerInput, decay=self.data['decay'],epsilon=self.data['epsilon'],
-                                        act=self.data['act'], is_train=True)
+                                        act=self.data['act'], is_train=True, name=self.name)
 
 class TransposeLayer(zkLayer):
     def setup(self):
         self.data['perm'] = [int(i) for i in self.data['perm'].split(',')]
 
-    def forward(self, layerInput):
+    def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
         return tl.layers.TransposeLayer(layerInput, perm=self.data['perm'], name=self.name)
+
+class RecordLayer(zkLayer):
+    def setup(self):
+        pass
+
+    def forward(self, layerInput, *meta):
+        sMeta = meta[0]
+        if 'end_point' not in sMeta:
+            sMeta['end_point'] = {"count" : 1, "outs" : {"out1" : layerInput}}
+        else:
+            count = int(sMeta['end_point']['count']) + 1
+            tagName = "out" + str(count)
+            sMeta['end_point']['count'] = count
+            sMeta['end_point'][tagName] = layerInput
+        print("[JJZHK] Record Layer")
+        return layerInput
+
+class SelfLayer(zkLayer):
+    def setup(self):
+        pass
+
+    def forward(self, layerInput, *meta):
+
+        return layerInput

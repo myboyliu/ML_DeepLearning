@@ -5,36 +5,37 @@ import numpy as np
 
 def lossfunction(predicts, labels, *data):
     print('---------------------------------')
+    # 1470 = cell_size * cell_size * (5 * boxes_per_cell + num_class) = 7 * 7 * (5 * 2 + 20)
     # predicts = (?, 1470)
     # labels = (?,7,7,25)
     meta = data[0]
-    cell_size = int(meta['cell_size']) if 'cell_size' in meta else 7
-    num_class = meta['n_classes']
-    boxes_per_cell = int(meta['boxes_per_cell']) if 'boxes_per_cell' in meta else 2
-    batch_size = meta['batch_size']
-    image_size = meta['image_size']
-    class_scale = float(meta['class_scale'])
-    object_scale = float(meta['object_scale'])
-    noobject_scale = float(meta['noobject_scale'])
-    coord_scale = float(meta['coord_scale'])
-    boundary1 = cell_size * cell_size * num_class
-    boundary2 = boundary1 + cell_size * cell_size * boxes_per_cell
+    cell_size = int(meta['cell_size']) if 'cell_size' in meta else 7                # 7
+    num_class = meta['n_classes']                                                   # 20
+    boxes_per_cell = int(meta['boxes_per_cell']) if 'boxes_per_cell' in meta else 2 # 2
+    batch_size = meta['batch_size']                                                 # 45
+    image_size = meta['image_size']                                                 # 448
+    class_scale = float(meta['class_scale'])                                        # 2.0
+    object_scale = float(meta['object_scale'])                                      # 1.0
+    noobject_scale = float(meta['noobject_scale'])                                  # 1.0
+    coord_scale = float(meta['coord_scale'])                                        # 5.0
+    boundary1 = cell_size * cell_size * num_class                                   # 7 * 7 * 20 = 980
+    boundary2 = boundary1 + cell_size * cell_size * boxes_per_cell                  # 980 + 7 * 7 * 2 = 1078
     offset = np.transpose(np.reshape(np.array(
         [np.arange(cell_size)] * cell_size * boxes_per_cell),
         (boxes_per_cell, cell_size, cell_size)), (1, 2, 0))
 
     with tf.variable_scope('loss_layer'):
         # 将predicts[0:980]转为[?,7,7,20] 分类的计算
-        predict_classes = tf.reshape(predicts[:, :boundary1], [batch_size, cell_size, cell_size, num_class])
+        predict_classes = tf.reshape(predicts[:, :boundary1], [batch_size, cell_size, cell_size, num_class]) # 0~980
         # 将predicts[980:1078]转为[?,7,7,2] confidence，信心量
-        predict_scales = tf.reshape(predicts[:, boundary1:boundary2], [batch_size, cell_size, cell_size, boxes_per_cell])
+        predict_scales = tf.reshape(predicts[:, boundary1:boundary2], [batch_size, cell_size, cell_size, boxes_per_cell]) # 980 ~ 1078
         # 将predicts[1078:1470]转为[7,7,2,4] BoundingBox计算,2表示每个小区域生成2个BoundingBox，4代表每个小区域的尺寸
-        predict_boxes = tf.reshape(predicts[:, boundary2:], [batch_size, cell_size, cell_size, boxes_per_cell, 4])
+        predict_boxes = tf.reshape(predicts[:, boundary2:], [batch_size, cell_size, cell_size, boxes_per_cell, 4]) # 1078 ~ 1470
 
-        response = tf.reshape(labels[:, :, :, 0], [batch_size, cell_size, cell_size, 1])
-        boxes = tf.reshape(labels[:, :, :, 1:5], [batch_size, cell_size, cell_size, 1, 4])
+        response = tf.reshape(labels[:, :, :, 0], [batch_size, cell_size, cell_size, 1]) # 1
+        boxes = tf.reshape(labels[:, :, :, 1:5], [batch_size, cell_size, cell_size, 1, 4]) # 4个坐标
         boxes = tf.cast(tf.tile(boxes, [1, 1, 1, boxes_per_cell, 1]) / image_size, dtype=tf.float32)
-        classes = labels[:, :, :, 5:]
+        classes = labels[:, :, :, 5:] # label 的one-hot编码
 
         offset = tf.constant(offset, dtype=tf.float32)
         offset = tf.reshape(offset, [1, cell_size, cell_size, boxes_per_cell])

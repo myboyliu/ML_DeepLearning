@@ -2,11 +2,11 @@ from darkflow.net.build import TFNet
 import cv2
 import random
 
-cap = cv2.VideoCapture("video.mov")
+cap = cv2.VideoCapture("test.mp4")
 fps = cap.get(cv2.CAP_PROP_FPS)
 size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
         int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-videoWriter = cv2.VideoWriter("MyVideo1.avi", cv2.VideoWriter_fourcc(*'XVID'), fps, size)
+videoWriter = cv2.VideoWriter("test.avi", cv2.VideoWriter_fourcc(*'XVID'), fps, size)
 model_path = "your_network_cfg.cfg"
 weights_path = "your_network_weights.weights"
 

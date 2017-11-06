@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<root>
+    <TrainConfig>
+        <optimizer>adam</optimizer>
+        <learning_rate>
+            <init>0.01</init>
+            <type>nat</type>
+            <num_epochs_per_decay>4</num_epochs_per_decay>
+            <decay_rate>0.5</decay_rate>
+        </learning_rate>
+        <gpu_num>2</gpu_num>
+        <epoch>20</epoch>
+        <dataType>cifar10</dataType>
+        <dataPath>../Total_Data/cifar10/</dataPath>
+        <isSaveNpzFile>1</isSaveNpzFile>
+        <NpzFileName>cifar_resnet.npz</NpzFileName>
+        <n_classes>10</n_classes>
+    </TrainConfig>
+    <NetConfig>
+        <Layer type="inp" size="32" channel="3" batch_size="64"/>
+        <Layer type="con" n_filter="24" filter_size="3,3"/>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="slf"/>
+            <Layer>
+                <Layer type="slf"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="48" filter_size="3,3"/>
+            </Layer>
+        </Layer>
+
+        <Layer type="ewl" combine="concat">
+            <Layer type="slf"/>
+            <Layer>
+                <Layer type="slf"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="48" filter_size="3,3"/>
+            </Layer>
+        </Layer>
+
+
+
+
+
+        <!--<Layer type="bnl"/>-->
+        <!--<Layer type="con" n_filter="16" filter_size="3,3"/>-->
+        <!--<Layer type="bnl"/>-->
+        <!--<Layer type="res" n_filter="64" count="0" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="64" count="1" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="64" count="2" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="64" count="3" subsample_factor="1"/>-->
+        <!--<Layer type="bnl"/>-->
+        <!--<Layer type="res" n_filter="128" count="4" subsample_factor="2"/>-->
+        <!--<Layer type="res" n_filter="128" count="5" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="128" count="6" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="128" count="7" subsample_factor="1"/>-->
+        <!--<Layer type="bnl"/>-->
+        <!--<Layer type="res" n_filter="256" count="0" subsample_factor="2"/>-->
+        <!--<Layer type="res" n_filter="256" count="3" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="256" count="6" subsample_factor="1"/>-->
+        <!--<Layer type="res" n_filter="256" count="9" subsample_factor="1"/>-->
+        <!--<Layer type="bnl" decay="0.999" epsilon="0.00001"/>-->
+        <!--<Layer type="avg" filter_size="8,8" strides="8,8" padding="VALID"/>-->
+        <!--<Layer type="fla"/>-->
+
+        <!--<Layer type="ful" n_units="10" act="identity"/>-->
+    </NetConfig>
+</root>

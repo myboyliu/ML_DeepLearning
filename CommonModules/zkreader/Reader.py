@@ -87,7 +87,7 @@ class MnistReader(Reader):
                                                          self.meta['image_size'],
                                                          self.meta['image_channel']
                                                      ])
-        image_test, label_test = readFromTFRecords(self.testFileList, batch_size=self.meta['batch_size'],
+        image_test, label_test = readFromTFRecords(self.testFileList, batch_size=self.meta['batch_size'] if self.testRecordCount > self.meta['batch_size'] else self.testRecordCount,
                                                    img_shape=[
                                                        self.meta['image_size'],
                                                        self.meta['image_size'],

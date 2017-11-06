@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <root>
     <TrainConfig>
-        <optimizer>adam</optimizer>
+        <optimizer>rms</optimizer>
         <learning_rate>0.001</learning_rate>
         <gpu_num>2</gpu_num>
         <epoch>20</epoch>
-        <dataType>cifar10</dataType>
-        <dataPath>../Total_Data/cifar10/</dataPath>
+        <dataType>flower</dataType>
+        <dataPath>../Total_Data/flowers17_224/</dataPath>
         <isSaveNpzFile>1</isSaveNpzFile>
-        <NpzFileName>vgg16.npz</NpzFileName>
-        <n_classes>10</n_classes>
+        <NpzFileName>flowers.npz</NpzFileName>
+        <n_classes>17</n_classes>
     </TrainConfig>
     <NetConfig>
-        <Layer type="inp" size="32" channel="3" batch_size="100"/>
+        <Layer type="inp" size="300" channel="3" batch_size="36"/>
 
         <Layer type="con" n_filter="64" filter_size="3,3"/>
         <Layer type="con" n_filter="64" filter_size="3,3"/>
-        <Layer type="max" filter_size="3,3" strides="2,2" padding="VALID"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
 
         <Layer type="con" n_filter="128" filter_size="3,3"/>
         <Layer type="con" n_filter="128" filter_size="3,3"/>
-        <Layer type="max" filter_size="3,3" strides="2,2"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
 
         <Layer type="con" n_filter="256" filter_size="3,3"/>
         <Layer type="con" n_filter="256" filter_size="3,3"/>
         <Layer type="con" n_filter="256" filter_size="3,3"/>
-        <Layer type="max" filter_size="3,3" strides="2,2"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
 
         <Layer type="con" n_filter="512" filter_size="3,3"/>
         <Layer type="con" n_filter="512" filter_size="3,3"/>
         <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="max" filter_size="3,3" strides="2,2"/>
+        <Layer type="max" filter_size="2,2" strides="2,2"/>
 
         <Layer type="con" n_filter="512" filter_size="3,3"/>
         <Layer type="con" n_filter="512" filter_size="3,3"/>
         <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="max" filter_size="3,3" strides="2,2"/>
+        <Layer type="max" filter_size="3,3" strides="1,1"/>
 
         <Layer type="fla"/>
 
@@ -43,6 +43,6 @@
         <Layer type="drp" keep="0.5"/>
         <Layer type="ful" n_units="4096"/>
         <Layer type="drp" keep="0.5"/>
-        <Layer type="ful" n_units="10" act="identity"/>
+        <Layer type="ful" n_units="17" act="identity"/>
     </NetConfig>
 </root>

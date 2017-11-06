@@ -2,7 +2,7 @@ from xml.etree.ElementTree import parse
 from zknet.zkLayer import zkLayer
 from zknet.zkLayer import InputLayer, ConvLayer, LrnLayer, MaxPoolLayer, FlattenLayer, \
     FullyConnectLayer, DropOutLayer, AvergePoolLayer, MergeLayer, BatchNormLayer, ResnetLayer, \
-    PadLayer, TransposeLayer
+    PadLayer, TransposeLayer, RecordLayer, SelfLayer
 layerOpt = {
     "inp" : InputLayer,
     "pad" : PadLayer,
@@ -16,7 +16,9 @@ layerOpt = {
     "ewl" : MergeLayer,
     "bnl" : BatchNormLayer,
     "res" : ResnetLayer,
-    "tra" : TransposeLayer
+    "tra" : TransposeLayer,
+    "rec" : RecordLayer,
+    "slf" : SelfLayer
 }
 def print_node(node):
     '''''打印结点基本信息'''
@@ -27,7 +29,7 @@ def print_node(node):
     print("node.tag:%s" % node.tag)
     print("node.text:%s" % node.text)
 
-def create_network(filePath):
+def create_network(filePath, UserDefinedLayer={}):
     root = parse(filePath)
     trainConfig = root.find("TrainConfig")
     meta = dict()
@@ -44,16 +46,44 @@ def create_network(filePath):
     count = {}
     layers = list()
     for LayerNode in LayerNodeList:
-        type_vec = LayerNode.attrib['type']
+        if 'type' not in LayerNode.attrib:
+            if 'Loop' not in LayerNode.attrib:
+                loop = 1
+            else:
+                loop = LayerNode.attrib['Loop']
+
+            for index in range(int(loop)):
+                for child in LayerNode:
+                    dealLayers(child, count, layers, meta, UserDefinedLayer)
+        else:
+            dealLayers(LayerNode, count, layers, meta, UserDefinedLayer)
+
+    return meta, dict(), layers
+
+def dealLayers(LayerNode, count, layers, meta, UserDefinedLayer ):
+    type_vec = LayerNode.attrib['type']
+    data = LayerNode.attrib.copy()
+    # del data['type']
+
+    if 'Loop' not in LayerNode.attrib:
+        loop = 1
+    else:
+        loop = LayerNode.attrib['Loop']
+    if type_vec == "inp":
+        loop = 1
+
+    for index in range(int(loop)):
         if type_vec in count :
             count[type_vec] += 1
         else:
             count[type_vec] = 1
-        op_class = layerOpt.get(type_vec, zkLayer)
-        data = LayerNode.attrib
-        del data['type']
         vec = type_vec + str(count[type_vec])
         data['name'] = vec
+        if (type_vec == "usd"):
+            op_class = UserDefinedLayer.get(LayerNode.attrib['class'], zkLayer)
+        else:
+            op_class = layerOpt.get(type_vec, zkLayer)
+
         layer = op_class(vec, data)
         if type_vec == 'ewl':
             mylayer = parseEWL(vec, LayerNode)
@@ -63,7 +93,6 @@ def create_network(filePath):
             meta['batch_size'] = layer.batch_size
             meta['image_size'] = layer.size
             meta['image_channel'] = layer.channel
-    return meta, dict(), layers
 
 def parseEWL(parentName, ewlNode):
     index = 0
