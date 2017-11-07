@@ -20,53 +20,51 @@
         <Layer type="inp" size="32" channel="3" batch_size="64"/>
         <Layer type="con" n_filter="24" filter_size="3,3"/>
 
-        <Layer type="ewl" combine="concat">
+        <Layer type="ewl" combine="concat" Loop="16">
             <Layer type="slf"/>
             <Layer>
                 <Layer type="slf"/>
                 <Layer type="bnl" act="relu"/>
                 <Layer type="con" n_filter="48"/>
                 <Layer type="bnl" act="relu"/>
-                <Layer type="con" n_filter="48" filter_size="3,3"/>
+                <Layer type="con" n_filter="12" filter_size="3,3"/>
             </Layer>
         </Layer>
 
-        <Layer type="ewl" combine="concat">
+        <Layer type="bnl" act="relu"/>
+        <Layer type="con" n_filter="108"/>
+        <Layer type="avg" filter_size="2,2" strides="2,2"/>
+
+        <Layer type="ewl" combine="concat" Loop="16">
             <Layer type="slf"/>
             <Layer>
                 <Layer type="slf"/>
                 <Layer type="bnl" act="relu"/>
                 <Layer type="con" n_filter="48"/>
                 <Layer type="bnl" act="relu"/>
-                <Layer type="con" n_filter="48" filter_size="3,3"/>
+                <Layer type="con" n_filter="12" filter_size="3,3"/>
             </Layer>
         </Layer>
 
+        <Layer type="bnl" act="relu"/>
+        <Layer type="con" n_filter="204"/>
+        <Layer type="avg" filter_size="2,2" strides="2,2"/>
 
+        <Layer type="ewl" combine="concat" Loop="16">
+            <Layer type="slf"/>
+            <Layer>
+                <Layer type="slf"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="48"/>
+                <Layer type="bnl" act="relu"/>
+                <Layer type="con" n_filter="12" filter_size="3,3"/>
+            </Layer>
+        </Layer>
 
-
-
-        <!--<Layer type="bnl"/>-->
-        <!--<Layer type="con" n_filter="16" filter_size="3,3"/>-->
-        <!--<Layer type="bnl"/>-->
-        <!--<Layer type="res" n_filter="64" count="0" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="64" count="1" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="64" count="2" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="64" count="3" subsample_factor="1"/>-->
-        <!--<Layer type="bnl"/>-->
-        <!--<Layer type="res" n_filter="128" count="4" subsample_factor="2"/>-->
-        <!--<Layer type="res" n_filter="128" count="5" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="128" count="6" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="128" count="7" subsample_factor="1"/>-->
-        <!--<Layer type="bnl"/>-->
-        <!--<Layer type="res" n_filter="256" count="0" subsample_factor="2"/>-->
-        <!--<Layer type="res" n_filter="256" count="3" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="256" count="6" subsample_factor="1"/>-->
-        <!--<Layer type="res" n_filter="256" count="9" subsample_factor="1"/>-->
-        <!--<Layer type="bnl" decay="0.999" epsilon="0.00001"/>-->
-        <!--<Layer type="avg" filter_size="8,8" strides="8,8" padding="VALID"/>-->
+        <Layer type="bnl" act="relu"/>
+        <Layer type="gla"/>
         <!--<Layer type="fla"/>-->
 
-        <!--<Layer type="ful" n_units="10" act="identity"/>-->
+        <Layer type="ful" n_units="10" act="identity"/>
     </NetConfig>
 </root>

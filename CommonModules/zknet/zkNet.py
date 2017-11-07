@@ -230,8 +230,8 @@ class zkNet(object):
                             # time.sleep(0.3)
                         elif (percent >= 99 and idx == train_count - 1):
                             percent = 99
-                            s1 = "\rProgress[%s%s]%d%%,Loss=%s,Accuracy=%s"%("*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
-                                                                             "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
+                            s1 = "\r%d/%d[%s%s]%d%%,Loss=%s,Accuracy=%s"%((idx),(train_count),"*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
+                                                                          "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
                             sys.stdout.write(s1)
                             sys.stdout.flush()
 

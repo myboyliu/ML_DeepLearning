@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorlayer as tl
 
 def PrintLog(tensor, *data):
-    # print("[JJZHK] Input Tensor Shape : %s" % tensor.get_shape())
+    print("[JJZHK] Input Tensor Shape : %s" % tensor.get_shape())
     pass
 class zkLayer(object):
     def __init__(self, *args):
@@ -130,7 +130,8 @@ class FullyConnectLayer(zkLayer):
                      ['alpha', 0.1],
                      ['w_stddev', 0.02],
                      ['w_mean', 0.0],
-                     ['b_value', '0.0']
+                     ['b_value', '0.0'],
+                     ['reshape', False]
                     ]
     def setup(self):
         for v in self.default_value:
@@ -143,6 +144,7 @@ class FullyConnectLayer(zkLayer):
         self.data['w_stddev'] = float(self.data['w_stddev'])
         self.data['w_mean'] = float(self.data['w_mean'])
         self.data['b_value'] = float(self.data['b_value'])
+        self.data['reshape'] = bool(self.data['reshape'])
 
         if 'act' in self.data and self.data['act'] == 'leaky_relu': # leaky_relu
             self.data['act_alpha'] = float(self.data['act_alpha'])
@@ -152,10 +154,20 @@ class FullyConnectLayer(zkLayer):
 
     def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
-        return tl.layers.DenseLayer(layerInput, n_units=self.data['n_units'], act=self.data['act'],
-                                    W_init=tf.truncated_normal_initializer(mean=self.data['w_mean'], stddev=self.data['w_stddev']),
-                                    b_init=tf.constant_initializer(value=self.data['b_value']),
-                                    name=self.name)
+        layer = tl.layers.DenseLayer(layerInput, n_units=self.data['n_units'], act=self.data['act'],
+                                     W_init=tf.truncated_normal_initializer(mean=self.data['w_mean'], stddev=self.data['w_stddev']),
+                                     b_init=tf.constant_initializer(value=self.data['b_value']),
+                                     name=self.name)
+        if self.data['reshape'] == True:
+            out = layerInput.outputs
+            out = tf.reshape(out, [int(out.shape[0]), 1, 1, int(out.shape[1])])
+            batch_size = int(meta[0]['batch_size'])
+            image_size = int(meta[0]['image_size'])
+            input1 = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size,image_size,int(out.shape[3])], name='images1')
+            out = input1 * out
+            return tl.layers.InputLayer(out)
+        else:
+            return layer
 class DropOutLayer(zkLayer):
     default_value = [['keep', 0.5]
                      ]
@@ -380,3 +392,23 @@ class SelfLayer(zkLayer):
     def forward(self, layerInput, *meta):
 
         return layerInput
+
+class GlobalAvgLayer(zkLayer):
+    def setup(self):
+        pass
+
+    def forward(self, layerInput, *meta):
+        outputs = layerInput.outputs
+        outputs = tf.reduce_mean(outputs, axis=[1,2])
+
+        return tl.layers.InputLayer(outputs, name=self.name)
+
+class GlobalMaxLayer(zkLayer):
+    def setup(self):
+        pass
+
+    def forward(self, layerInput, *meta):
+        outputs = layerInput.outputs
+        outputs = tf.reduce_max(outputs, axis=[1,2])
+
+        return tl.layers.InputLayer(outputs, name=self.name)

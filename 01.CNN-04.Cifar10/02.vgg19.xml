@@ -20,57 +20,43 @@
         <Layer type="inp" size="32" channel="3" batch_size="128"/>
         <Layer type="bnl"/>
 
-        <Layer type="con" n_filter="64" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="64" filter_size="3,3"/>
-        <Layer type="bnl"/>
+        <Layer Loop="2">
+            <Layer type="con" n_filter="64" filter_size="3,3"/>
+            <Layer type="bnl"/>
+        </Layer>
         <Layer type="max" filter_size="2,2" strides="2,2"/>
 
-
-        <Layer type="con" n_filter="128" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="128" filter_size="3,3"/>
-        <Layer type="bnl"/>
+        <Layer Loop="2">
+            <Layer type="con" n_filter="128" filter_size="3,3"/>
+            <Layer type="bnl"/>
+        </Layer>
         <Layer type="max" filter_size="2,2" strides="2,2"/>
 
-        <Layer type="con" n_filter="256" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="256" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="256" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="256" filter_size="3,3"/>
-        <Layer type="bnl"/>
+        <Layer Loop="4">
+            <Layer type="con" n_filter="256" filter_size="3,3"/>
+            <Layer type="bnl"/>
+        </Layer>
         <Layer type="max" filter_size="2,2" strides="2,2"/>
 
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
+        <Layer Loop="4">
+            <Layer type="con" n_filter="512" filter_size="3,3"/>
+            <Layer type="bnl"/>
+        </Layer>
         <Layer type="max" filter_size="2,2" strides="2,2"/>
 
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <Layer type="con" n_filter="512" filter_size="3,3"/>
-        <Layer type="bnl"/>
-        <!--<Layer type="max" filter_size="2,2" strides="2,2"/>-->
+        <Layer Loop="4">
+            <Layer type="con" n_filter="512" filter_size="3,3"/>
+            <Layer type="bnl"/>
+        </Layer>
 
         <Layer type="fla"/>
 
-        <Layer type="ful" n_units="4096"/>
-        <Layer type="bnl"/>
-        <Layer type="drp" keep="0.5"/>
-        <Layer type="ful" n_units="4096"/>
-        <Layer type="bnl"/>
-        <Layer type="drp" keep="0.5"/>
+        <Layer Loop="2">
+            <Layer type="ful" n_units="4096"/>
+            <Layer type="bnl"/>
+            <Layer type="drp" keep="0.5"/>
+        </Layer>
+
         <Layer type="ful" n_units="10" act="identity"/>
     </NetConfig>
 </root>

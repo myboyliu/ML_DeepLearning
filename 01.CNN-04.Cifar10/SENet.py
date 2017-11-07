@@ -1,163 +1,266 @@
-import keras
-import math
+import tensorflow as tf
+from tflearn.layers.conv import global_avg_pool
+from tensorflow.contrib.layers import batch_norm, flatten
+from tensorflow.contrib.framework import arg_scope
 import numpy as np
-from keras.datasets import cifar10
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers.normalization import BatchNormalization
-from keras.layers import Conv2D, Dense, Input, add, Activation, GlobalAveragePooling2D, multiply, Reshape
-from keras.layers import Lambda, concatenate
-from keras.initializers import he_normal
-from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-from keras.models import Model
-from keras import optimizers
-from keras import regularizers
-from keras import backend as K
+
+weight_decay = 0.0005
+momentum = 0.9
+
+init_learning_rate = 0.1
+cardinality = 8 # how many split ?
+blocks = 3 # res_block ! (split + transition)
+depth = 64 # out channel
+
+"""
+So, the total number of layers is (3*blokcs)*residual_layer_num + 2
+because, blocks = split(conv 2) + transition(conv 1) = 3 layer
+and, first conv layer 1, last dense layer 1
+thus, total number of layers = (3*blocks)*residual_layer_num + 2
+"""
+
+reduction_ratio = 4
+
+batch_size = 128
+iteration = 391
+# 128 * 391 ~ 50,000
+
+test_iteration = 10
+
+total_epochs = 100
+image_size = 32
+img_channels = 3
+class_num = 10 #in cifar10
 
 
+def conv_layer(input, filter, kernel, stride, padding='SAME', layer_name="conv"):
+    with tf.name_scope(layer_name):
+        network = tf.layers.conv2d(inputs=input, use_bias=False, filters=filter, kernel_size=kernel, strides=stride, padding=padding)
+        return network
 
-cardinality        = 4          # 4 or 8 or 16 or 32
-base_width         = 64
-inplanes           = 64
-expansion          = 4
+def Global_Average_Pooling(x):
+    return global_avg_pool(x, name='Global_avg_pooling')
 
-img_rows, img_cols = 32, 32
-img_channels       = 3
-num_classes        = 10
-batch_size         = 64  # 120
-iterations         = 781 # 416       # total data / iterations = batch size
-epochs             = 250
-weight_decay       = 0.0005
+def Average_pooling(x, pool_size=[2,2], stride=2, padding='SAME'):
+    return tf.layers.average_pooling2d(inputs=x, pool_size=pool_size, strides=stride, padding=padding)
 
-mean = [125.307, 122.95, 113.865]
-std  = [62.9932, 62.0887, 66.7048]
+def Batch_Normalization(x, training, scope):
+    with arg_scope([batch_norm],
+                   scope=scope,
+                   updates_collections=None,
+                   decay=0.9,
+                   center=True,
+                   scale=True,
+                   zero_debias_moving_mean=True) :
+        return tf.cond(training,
+                       lambda : batch_norm(inputs=x, is_training=training, reuse=None),
+                       lambda : batch_norm(inputs=x, is_training=training, reuse=True))
 
-def scheduler(epoch):
-    if epoch <= 75:
-        return 0.05
-    if epoch <= 150:
-        return 0.005
-    if epoch <= 210:
-        return 0.0005
-    return 0.0001
+def Relu(x):
+    return tf.nn.relu(x)
 
-def resnext(img_input,classes_num):
-    global inplanes
-    def add_common_layer(x):
-        x = BatchNormalization()(x)
-        x = Activation('relu')(x)
+def Sigmoid(x) :
+    return tf.nn.sigmoid(x)
+
+def Concatenation(layers) :
+    return tf.concat(layers, axis=3)
+
+def Fully_connected(x, units=class_num, layer_name='fully_connected') :
+    with tf.name_scope(layer_name) :
+        return tf.layers.dense(inputs=x, use_bias=False, units=units)
+
+
+class SE_ResNeXt():
+    def __init__(self, x, training):
+        self.training = training
+        self.model = self.Build_SEnet(x)
+
+    def first_layer(self, x, scope):
+        with tf.name_scope(scope) :
+            x = conv_layer(x, filter=64, kernel=[3, 3], stride=1, layer_name=scope+'_conv1')
+            x = Batch_Normalization(x, training=self.training, scope=scope+'_batch1')
+            x = Relu(x)
+
+            return x
+
+    def transform_layer(self, x, stride, scope):
+        with tf.name_scope(scope) :
+            x = conv_layer(x, filter=depth, kernel=[1,1], stride=1, layer_name=scope+'_conv1')
+            x = Batch_Normalization(x, training=self.training, scope=scope+'_batch1')
+            x = Relu(x)
+
+            x = conv_layer(x, filter=depth, kernel=[3,3], stride=stride, layer_name=scope+'_conv2')
+            x = Batch_Normalization(x, training=self.training, scope=scope+'_batch2')
+            x = Relu(x)
+            return x
+
+    def transition_layer(self, x, out_dim, scope):
+        with tf.name_scope(scope):
+            x = conv_layer(x, filter=out_dim, kernel=[1,1], stride=1, layer_name=scope+'_conv1')
+            x = Batch_Normalization(x, training=self.training, scope=scope+'_batch1')
+            # x = Relu(x)
+
+            return x
+
+    def split_layer(self, input_x, stride, layer_name):
+        with tf.name_scope(layer_name) :
+            layers_split = list()
+            for i in range(cardinality) :
+                splits = self.transform_layer(input_x, stride=stride, scope=layer_name + '_splitN_' + str(i))
+                layers_split.append(splits)
+
+            return Concatenation(layers_split)
+
+    def squeeze_excitation_layer(self, input_x, out_dim, ratio, layer_name):
+        with tf.name_scope(layer_name) :
+
+
+            squeeze = Global_Average_Pooling(input_x)
+
+            excitation = Fully_connected(squeeze, units=out_dim / ratio, layer_name=layer_name+'_fully_connected1')
+            excitation = Relu(excitation)
+            excitation = Fully_connected(excitation, units=out_dim, layer_name=layer_name+'_fully_connected2')
+            excitation = Sigmoid(excitation)
+
+            excitation = tf.reshape(excitation, [-1,1,1,out_dim])
+            scale = input_x * excitation
+
+            return scale
+
+    def residual_layer(self, input_x, out_dim, layer_num, res_block=blocks):
+        # split + transform(bottleneck) + transition + merge
+        # input_dim = input_x.get_shape().as_list()[-1]
+
+        for i in range(res_block):
+            input_dim = int(np.shape(input_x)[-1])
+
+            if input_dim * 2 == out_dim:
+                flag = True
+                stride = 2
+                channel = input_dim // 2
+            else:
+                flag = False
+                stride = 1
+
+            x = self.split_layer(input_x, stride=stride, layer_name='split_layer_'+layer_num+'_'+str(i))
+            x = self.transition_layer(x, out_dim=out_dim, scope='trans_layer_'+layer_num+'_'+str(i))
+            x = self.squeeze_excitation_layer(x, out_dim=out_dim, ratio=reduction_ratio, layer_name='squeeze_layer_'+layer_num+'_'+str(i))
+
+            if flag is True :
+                pad_input_x = Average_pooling(input_x)
+                pad_input_x = tf.pad(pad_input_x, [[0, 0], [0, 0], [0, 0], [channel, channel]]) # [?, height, width, channel]
+            else :
+                pad_input_x = input_x
+
+            input_x = Relu(x + pad_input_x)
+
         return x
 
-    def group_conv(x,planes,stride):
-        h = planes // cardinality
-        groups = []
-        for i in range(cardinality):
-            group = Lambda(lambda z: z[:,:,:, i * h : i * h + h])(x)
-            groups.append(Conv2D(h,kernel_size=(3,3),strides=stride,kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay),padding='same',use_bias=False)(group))
-        x = concatenate(groups)
+
+    def Build_SEnet(self, input_x):
+        # only cifar10 architecture
+
+        input_x = self.first_layer(input_x, scope='first_layer')
+
+        x = self.residual_layer(input_x, out_dim=64, layer_num='1')
+        x = self.residual_layer(x, out_dim=128, layer_num='2')
+        x = self.residual_layer(x, out_dim=256, layer_num='3')
+
+        x = Global_Average_Pooling(x)
+        x = flatten(x)
+
+        x = Fully_connected(x, layer_name='final_fully_connected')
         return x
 
-    def residual_block(x,planes,stride=(1,1)):
-
-        D = int(math.floor(planes * (base_width/64.0)))
-        C = cardinality
-
-        shortcut = x
-
-        y = Conv2D(D*C,kernel_size=(1,1),strides=(1,1),padding='same',kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay),use_bias=False)(shortcut)
-        y = add_common_layer(y)
-
-        y = group_conv(y,D*C,stride)
-        y = add_common_layer(y)
-
-        y = Conv2D(planes*expansion, kernel_size=(1,1), strides=(1,1), padding='same', kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay),use_bias=False)(y)
-        y = add_common_layer(y)
-
-        if stride != (1,1) or inplanes != planes * expansion:
-            shortcut = Conv2D(planes * expansion, kernel_size=(1,1), strides=stride, padding='same', kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay),use_bias=False)(x)
-            shortcut = BatchNormalization()(shortcut)
-
-        y = squeeze_excite_block(y)
-
-        y = add([y,shortcut])
-        y = Activation('relu')(y)
-        return y
-
-    def residual_layer(x, blocks, planes, stride=(1,1)):
-        x = residual_block(x, planes, stride)
-        inplanes = planes * expansion
-        for i in range(1,blocks):
-            x = residual_block(x,planes)
-        return x
-
-    def squeeze_excite_block(input, ratio=16):
-        init = input
-        channel_axis = 1 if K.image_data_format() == "channels_first" else -1  # compute channel axis
-        filters = init._keras_shape[channel_axis]  # infer input number of filters
-        se_shape = (1, 1, filters) if K.image_data_format() == 'channels_last' else (filters, 1, 1)  # determine Dense matrix shape
-
-        se = GlobalAveragePooling2D()(init)
-        se = Reshape(se_shape)(se)
-        se = Dense(filters // ratio, activation='relu', kernel_initializer='he_normal', kernel_regularizer=regularizers.l2(weight_decay), use_bias=False)(se)
-        se = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', kernel_regularizer=regularizers.l2(weight_decay), use_bias=False)(se)
-        x = multiply([init, se])
-        return x
-
-    def conv3x3(x,filters):
-        x = Conv2D(filters=filters, kernel_size=(3,3), strides=(1,1), padding='same',kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay),use_bias=False)(x)
-        return add_common_layer(x)
-
-    def dense_layer(x):
-        return Dense(classes_num,activation='softmax',kernel_initializer=he_normal(),kernel_regularizer=regularizers.l2(weight_decay))(x)
 
 
-    # build the resnext model
-    x = conv3x3(img_input,64)
-    x = residual_layer(x, 3, 64)
-    x = residual_layer(x, 3, 128,stride=(2,2))
-    x = residual_layer(x, 3, 256,stride=(2,2))
-    x = GlobalAveragePooling2D()(x)
-    x = dense_layer(x)
-    return x
 
-if __name__ == '__main__':
 
-    # load data
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-    y_train = keras.utils.to_categorical(y_train, num_classes)
-    y_test  = keras.utils.to_categorical(y_test, num_classes)
-    x_train = x_train.astype('float32')
-    x_test  = x_test.astype('float32')
+x = tf.placeholder(tf.float32, shape=[None, image_size, image_size, img_channels])
+label = tf.placeholder(tf.float32, shape=[None, class_num])
 
-    # - mean / std
-    for i in range(3):
-        x_train[:,:,:,i] = (x_train[:,:,:,i] - mean[i]) / std[i]
-        x_test[:,:,:,i] = (x_test[:,:,:,i] - mean[i]) / std[i]
+training_flag = tf.placeholder(tf.bool)
 
-    # build network
-    img_input = Input(shape=(img_rows,img_cols,img_channels))
-    output    = resnext(img_input,num_classes)
-    senet    = Model(img_input, output)
-    print(senet.summary())
 
-    # load weight
-    # senet.load_weights('senet.h5')
+learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
-    # set optimizer
-    sgd = optimizers.SGD(lr=.1, momentum=0.9, nesterov=True)
-    senet.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+logits = SE_ResNeXt(x, training=training_flag).model
+#
 
-    # set callback
-    tb_cb     = TensorBoard(log_dir='./senet/', histogram_freq=0)                                   # tensorboard log
-    change_lr = LearningRateScheduler(scheduler)                                                    # learning rate scheduler
-    ckpt      = ModelCheckpoint('./ckpt_senet.h5', save_best_only=False, mode='auto', period=10)    # checkpoint
-    cbks      = [change_lr,tb_cb,ckpt]
-
-    # set data augmentation
-    print('Using real-time data augmentation.')
-    datagen   = ImageDataGenerator(horizontal_flip=True,width_shift_range=0.125,height_shift_range=0.125,fill_mode='constant',cval=0.)
-
-    datagen.fit(x_train)
-
-    # start training
-    senet.fit_generator(datagen.flow(x_train, y_train,batch_size=batch_size), steps_per_epoch=iterations, epochs=epochs, callbacks=cbks,validation_data=(x_test, y_test))
-    senet.save('senet.h5')
+# train_x, test_x = color_preprocessing(train_x, test_x)
+#
+#
+# cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=logits))
+#
+# l2_loss = tf.add_n([tf.nn.l2_loss(var) for var in tf.trainable_variables()])
+# optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=momentum, use_nesterov=True)
+# train = optimizer.minimize(cost + l2_loss * weight_decay)
+#
+# correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(label, 1))
+# accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+#
+# saver = tf.train.Saver(tf.global_variables())
+#
+# with tf.Session() as sess:
+#     ckpt = tf.train.get_checkpoint_state('./model')
+#     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+#         saver.restore(sess, ckpt.model_checkpoint_path)
+#     else:
+#         sess.run(tf.global_variables_initializer())
+#
+#     summary_writer = tf.summary.FileWriter('./logs', sess.graph)
+#
+#     epoch_learning_rate = init_learning_rate
+#     for epoch in range(1, total_epochs + 1):
+#         if epoch % 30 == 0 :
+#             epoch_learning_rate = epoch_learning_rate / 10
+#
+#         pre_index = 0
+#         train_acc = 0.0
+#         train_loss = 0.0
+#
+#         for step in range(1, iteration + 1):
+#             if pre_index + batch_size < 50000:
+#                 batch_x = train_x[pre_index: pre_index + batch_size]
+#                 batch_y = train_y[pre_index: pre_index + batch_size]
+#             else:
+#                 batch_x = train_x[pre_index:]
+#                 batch_y = train_y[pre_index:]
+#
+#             batch_x = data_augmentation(batch_x)
+#
+#             train_feed_dict = {
+#                 x: batch_x,
+#                 label: batch_y,
+#                 learning_rate: epoch_learning_rate,
+#                 training_flag: True
+#             }
+#
+#             _, batch_loss = sess.run([train, cost], feed_dict=train_feed_dict)
+#             batch_acc = accuracy.eval(feed_dict=train_feed_dict)
+#
+#             train_loss += batch_loss
+#             train_acc += batch_acc
+#             pre_index += batch_size
+#
+#
+#         train_loss /= iteration # average loss
+#         train_acc /= iteration # average accuracy
+#
+#         train_summary = tf.Summary(value=[tf.Summary.Value(tag='train_loss', simple_value=train_loss),
+#                                           tf.Summary.Value(tag='train_accuracy', simple_value=train_acc)])
+#
+#         test_acc, test_loss, test_summary = Evaluate(sess)
+#
+#         summary_writer.add_summary(summary=train_summary, global_step=epoch)
+#         summary_writer.add_summary(summary=test_summary, global_step=epoch)
+#         summary_writer.flush()
+#
+#         line = "epoch: %d/%d, train_loss: %.4f, train_acc: %.4f, test_loss: %.4f, test_acc: %.4f \n" % (
+#             epoch, total_epochs, train_loss, train_acc, test_loss, test_acc)
+#         print(line)
+#
+#         with open('logs.txt', 'a') as f:
+#             f.write(line)
+#
+#         saver.save(sess=sess, save_path='./model/ResNeXt.ckpt')
