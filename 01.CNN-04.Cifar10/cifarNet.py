@@ -6,8 +6,8 @@ import tensorlayer as tl
 01. alexnet.xml -> Training Accuracy: 98.4% Testing Accuracy: 81.3%  
 02. vgg19.xml
 03. resnet.xml  -> Training Accuracy: 100%  Testing Accuracy: 85%
-04. densenet.xml-> Training Accuracy: 100%  Testing Accuracy: 85%
-05. senet.xml   -> Training Accuracy: 100%  Testing Accuracy: 85%
+04. densenet.xml-> Training Accuracy: 100%  Testing Accuracy: 84.15% 4.8 hours
+05. senet.xml   -> Training Accuracy: %  Testing Accuracy: %
 '''
 def lossfunction(logits, label,*data):
     # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label,
@@ -43,7 +43,7 @@ def accuracyFunction(logits, label,*data):
     # return accuracy
 
 if __name__ == '__main__':
-    zknet = zkNet('04.densenet.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
+    zknet = zkNet('05.senet.xml', LossFunc=lossfunction, AccFunc=accuracyFunction)
     zknet.train()
 
 

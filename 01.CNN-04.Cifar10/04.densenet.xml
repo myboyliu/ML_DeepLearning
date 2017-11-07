@@ -61,8 +61,11 @@
             </Layer>
         </Layer>
 
-        <Layer type="bnl" act="relu"/>
-        <Layer type="gla"/>
+        <Layer>
+            <Layer type="bnl" act="relu"/>
+            <Layer type="gla"/>
+        </Layer>
+
         <!--<Layer type="fla"/>-->
 
         <Layer type="ful" n_units="10" act="identity"/>

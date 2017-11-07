@@ -6,8 +6,9 @@ def PrintLog(tensor, *data):
     pass
 class zkLayer(object):
     def __init__(self, *args):
-        self.name = args[0]
+
         self.data = args[1]
+        self.name = self.data['name']
         self.setup()
     def setup(self):
         pass
@@ -159,13 +160,9 @@ class FullyConnectLayer(zkLayer):
                                      b_init=tf.constant_initializer(value=self.data['b_value']),
                                      name=self.name)
         if self.data['reshape'] == True:
-            out = layerInput.outputs
-            out = tf.reshape(out, [int(out.shape[0]), 1, 1, int(out.shape[1])])
-            batch_size = int(meta[0]['batch_size'])
-            image_size = int(meta[0]['image_size'])
-            input1 = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size,image_size,int(out.shape[3])], name='images1')
-            out = input1 * out
-            return tl.layers.InputLayer(out)
+            recName = self.data['recName']
+            recLayer = meta[0]['end_point'][recName]
+            return tl.layers.LambdaLayer(layer, lambda x : recLayer.outputs * tf.expand_dims(tf.expand_dims(x, 1), 1), name=self.name)
         else:
             return layer
 class DropOutLayer(zkLayer):
@@ -376,13 +373,10 @@ class RecordLayer(zkLayer):
     def forward(self, layerInput, *meta):
         sMeta = meta[0]
         if 'end_point' not in sMeta:
-            sMeta['end_point'] = {"count" : 1, "outs" : {"out1" : layerInput}}
-        else:
-            count = int(sMeta['end_point']['count']) + 1
-            tagName = "out" + str(count)
-            sMeta['end_point']['count'] = count
-            sMeta['end_point'][tagName] = layerInput
-        print("[JJZHK] Record Layer")
+            sMeta['end_point'] = {}
+
+        sMeta['end_point'][self.data['recName']] = layerInput
+        print("[JJZHK] Record Layer - %s" % self.data['recName'])
         return layerInput
 
 class SelfLayer(zkLayer):

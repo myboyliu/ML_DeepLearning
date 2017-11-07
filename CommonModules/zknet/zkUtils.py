@@ -45,41 +45,80 @@ def create_network(filePath, UserDefinedLayer={}):
             meta[child.tag] = child.text
 
     LayerNodeList = root.findall("NetConfig/Layer")
+
     count = {}
     layers = list()
-    for LayerNode in LayerNodeList:
-        if 'type' not in LayerNode.attrib:
-            if 'Loop' not in LayerNode.attrib:
-                loop = 1
-            else:
-                loop = LayerNode.attrib['Loop']
 
-            for index in range(int(loop)):
-                for child in LayerNode:
-                    dealLayers(child, count, layers, meta, UserDefinedLayer)
+    # for LayerNode in LayerNodeList:
+    #     if 'type' not in LayerNode.attrib:
+    #         if 'Loop' not in LayerNode.attrib:
+    #             loop = 1
+    #         else:
+    #             loop = LayerNode.attrib['Loop']
+    #
+    #         for index in range(int(loop)):
+    #             for child in LayerNode:
+    #                 dealLayers(child, count, layers, meta, UserDefinedLayer)
+    #     else:
+    #         dealLayers(LayerNode, count, layers, meta, UserDefinedLayer)
+
+    tempLayer = DealNodeList(LayerNodeList,count, UserDefinedLayer, meta)
+    for layer in tempLayer:
+        if type(layer) == list:
+            for temp in layer:
+                layers.append(temp)
         else:
-            dealLayers(LayerNode, count, layers, meta, UserDefinedLayer)
-
+            layers.append(layer)
     return meta, dict(), layers
 
-# def DealNodeList(LayerNodeList):
-#     for Node in LayerNodeList:
-#         if 'Loop' in Node.attrib:
-#             if 'type' not in Node.attrib: # 嵌套若干层进行循环
-#                 pass
-#             else: # 当前层进行循环
-#                 pass
-#         else:
-#             if 'type' not in Node.attrib: # 不进行循环，但是也没有type属性，那就是若干层用Layer父标签包裹了一下
-#                 DealNodeList(Node)
-#             else:
-#                 type_vec = Node.attrib['type']
-#                 if type_vec == 'ewl':  # 不循环，且当前是ewl层
-#                     pass
-#                 else: # 不循环，当前是普通层
-#                     pass
+def DealNodeList(LayerNodeList, count, UserDefinedLayer, meta):
 
+    layers = list()
+    for Node in LayerNodeList:
+        if 'Loop' in Node.attrib:
+            loop = int(Node.attrib['Loop'])
+            if 'type' not in Node.attrib: # 嵌套若干层进行循环
+                for index in range(loop):
+                    layers.append(DealNodeList(Node,count, UserDefinedLayer, meta))
+            else: # 当前层进行循环
+                for index in range(loop):
+                    layers.append(dealLayer(Node, count, UserDefinedLayer, meta))
+        else:
+            if 'type' not in Node.attrib: # 不进行循环，但是也没有type属性，那就是若干层用Layer父标签包裹了一下
+                layers.append(DealNodeList(Node,count, UserDefinedLayer, meta))
+            else:
+                layers.append(dealLayer(Node, count, UserDefinedLayer, meta))
+    return layers
 
+def dealLayer(Node, count, UserDefinedLayer, meta): # 进入这里的，都是有type的，也就是都是正经的Layer层，它们不应该再循环,但是他的下面可能有的层依然是有Loop的
+    type_vec = Node.attrib['type']
+    if type_vec in count :
+        count[type_vec] += 1
+    else:
+        count[type_vec] = 1
+
+    data = Node.attrib.copy()
+    vec = type_vec + str(count[type_vec])
+    if 'parent_name' in count:
+        data['name'] = count['parent_name'] + "_" + vec
+    else:
+        data['name'] = vec
+    if (type_vec == "usd"):
+        op_class = UserDefinedLayer.get(Node.attrib['class'], zkLayer)
+    else:
+        op_class = layerOpt.get(type_vec, zkLayer)
+
+    layer = op_class(data['name'], data)
+    if type_vec == 'ewl':
+        mylayer = DealNodeList(Node, {"parent_name": data['name']}, UserDefinedLayer, meta)
+        layer.subLayers = mylayer
+
+    if type_vec == "inp":
+        meta['batch_size'] = layer.batch_size
+        meta['image_size'] = layer.size
+        meta['image_channel'] = layer.channel
+
+    return layer
 
 
 def dealLayers(LayerNode, count, layers, meta, UserDefinedLayer ):
