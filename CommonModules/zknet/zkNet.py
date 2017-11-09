@@ -52,6 +52,10 @@ class zkNet(object):
             self.accFunc = self.AccFunction
         else:
             self.accFunc = AccFunc
+
+        if 'accFunction' in self.meta and self.meta['accFunction'] == 'False':
+            self.accFunc = None
+
         self.input = tf.placeholder(dtype=tf.float32, shape=[self.meta['batch_size'], self.meta['image_size'],
                                                              self.meta['image_size'], self.meta['image_channel']], name='images')
         if 'label_shape' in self.meta:
@@ -117,7 +121,11 @@ class zkNet(object):
         self.logits = self.network.outputs
 
         self.cost = self.lossFunc(self.logits, self.label, self.meta)
-        self.acc = self.accFunc(self.logits, self.label, self.meta)
+
+        if self.accFunc == None:
+            self.acc = None
+        else:
+            self.acc = self.accFunc(self.logits, self.label, self.meta)
 
     def LossFunction(self, logits, label, **data):
         ce = tl.cost.cross_entropy(logits, label, name='cost')
@@ -177,7 +185,8 @@ class zkNet(object):
         if self.meta['IsRecordSummary'] == 1:
             tf.summary.scalar('Loss', self.cost)
             tf.summary.scalar('LearningRate', self.learning_rate)
-            tf.summary.scalar('Accuracy', self.acc)
+            if self.acc != None:
+                tf.summary.scalar('Accuracy', self.acc)
             tf.summary.image('images', images, max_outputs=9)
             tf.summary.image('images', images_test, max_outputs=9)
         merged_summary = tf.summary.merge_all()
@@ -195,7 +204,7 @@ class zkNet(object):
             else:
                 train_timer = Timer()
 
-                tf.train.start_queue_runners(sess)
+                tf.train.start_queue_runners()
                 train_count = int(self.reader.trainRecordCount / self.meta['batch_size'])
                 for epoch in range(int(self.meta['epoch'])):
                     train_timer.tic()
@@ -215,25 +224,48 @@ class zkNet(object):
                             batch_labels_ex = self.to_categorical(batch_labels, self.meta['n_classes'])
                         else:
                             batch_labels_ex = batch_labels
-                        predictions = sess.run([self.acc], feed_dict={self.input:batch_image,
-                                                                      self.label : batch_labels_ex})
-                        batch_accuracy = np.sum(predictions) * 1.0
 
-                        perCount = int(train_count / 100)
+                        batch_accuracy = 0.0
+
+                        if self.acc != None:
+                            predictions = sess.run([self.acc], feed_dict={self.input:batch_image,
+                                                                          self.label : batch_labels_ex})
+                            batch_accuracy = np.sum(predictions) * 1.0
+
+                        perCount = int(train_count / 100) # 7
                         percent = int(idx / perCount)
 
-                        if (idx != 0 and idx % perCount == 0 and percent <= 98):
-                            s1 = "\r%d/%d[%s%s]%d%%,Loss=%s,Accuracy=%s"%((idx),(train_count),"*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
-                                                                             "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
-                            sys.stdout.write(s1)
-                            sys.stdout.flush()
-                            # time.sleep(0.3)
-                        elif (percent >= 99 and idx == train_count - 1):
-                            percent = 99
-                            s1 = "\r%d/%d[%s%s]%d%%,Loss=%s,Accuracy=%s"%((idx),(train_count),"*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
-                                                                          "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
-                            sys.stdout.write(s1)
-                            sys.stdout.flush()
+                        if train_count % perCount == 0:
+                            dotcount = int(train_count / perCount) - 1
+                        else:
+                            dotcount = int(train_count / perCount)
+
+                        if percent > 99 :
+                            i = 0
+                        s1 = "\r[%s%s] %d/%d,Loss=%s,Accuracy=%s"%(
+
+                            "*"*(int(percent)),
+                            " "*(dotcount-int(percent)),
+                            (idx + 1),
+                            (train_count),
+                            "{:.3f}".format(loss_value),
+                            "{:.3f}".format(batch_accuracy))
+
+                        sys.stdout.write(s1)
+                        sys.stdout.flush()
+
+                        # if (idx != 0 and idx % perCount == 0 and percent <= 98):
+                        #     s1 = "\r%d/%d[%s%s]%d%%,Loss=%s,Accuracy=%s"%((idx + 1),(train_count),"*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
+                        #                                                      "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
+                        #     sys.stdout.write(s1)
+                        #     sys.stdout.flush()
+                        #     # time.sleep(0.3)
+                        # elif (percent >= 99 and idx == train_count - 1):
+                        #     percent = 99
+                        #     s1 = "\r%d/%d[%s%s]%d%%,Loss=%s,Accuracy=%s"%((idx + 1),(train_count),"*"*(int(percent) + 1)," "*(100-int(percent) - 1),(int(percent) + 1),
+                        #                                                   "{:.3f}".format(loss_value), "{:.3f}".format(batch_accuracy))
+                        #     sys.stdout.write(s1)
+                        #     sys.stdout.flush()
 
                         if idx % self.meta['displayNum'] == 0 :
                             if self.meta['IsRecordSummary'] == 1:

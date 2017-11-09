@@ -152,13 +152,13 @@ class Voc2007Reader(Reader):
                                                          self.meta['image_size'],
                                                          self.meta['image_size'],
                                                          self.meta['image_channel']
-                                                     ])
+                                                     ], IsLabelInt=False)
         image_test, label_test = readFromTFRecords(self.testFileList, batch_size=self.meta['batch_size'],
                                                    img_shape=[
                                                        self.meta['image_size'],
                                                        self.meta['image_size'],
                                                        self.meta['image_channel']
-                                                   ])
+                                                   ], IsLabelInt=False)
         return (image_train,label_train), (image_test, label_test)
 
 class STLReader(Reader):

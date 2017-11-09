@@ -48,7 +48,7 @@ class ConvLayer(zkLayer):
                      ['w_stddev', 0.02],
                      ['w_mean', 0.0],
                      ['b_value', '0.0'],
-                     ['alpha', 0.1]]
+                     ['act_alpha', 0.1]]
     def setup(self):
         for v in self.default_value:
             key = v[0]
@@ -128,7 +128,7 @@ class FlattenLayer(zkLayer):
 class FullyConnectLayer(zkLayer):
     default_value = [['n_units', 4096],
                      ['act', "relu"],
-                     ['alpha', 0.1],
+                     ['act_alpha', 0.1],
                      ['w_stddev', 0.02],
                      ['w_mean', 0.0],
                      ['b_value', '0.0'],
@@ -215,8 +215,30 @@ class MergeLayer(zkLayer):
     def addSubLayers(self, layer):
         self.subLayers.append(layer)
 
+    def _adjustSubLayers(self):
+        layers = self.subLayers.copy()
+        self.subLayers.clear()
+
+        for layer in layers:
+            if type(layer) != list:
+                self.subLayers.append(layer)
+            else:
+                self.subLayers.append(self._addCommonLayer(layer))
+
+    def _addCommonLayer(self, layers):
+        tempLayer = list()
+        for layer in layers:
+            if type(layer) != list:
+                tempLayer.append(layer)
+            else:
+                list1 = self._addCommonLayer(layer)
+                for l in list1:
+                    tempLayer.append(l)
+        return tempLayer
     def forward(self, layerInput, *meta):
         PrintLog(layerInput.outputs)
+
+        self._adjustSubLayers()
         list_layer = []
         for layer in self.subLayers:
             if type(layer) != list:
@@ -339,7 +361,7 @@ class BatchNormLayer(zkLayer):
     default_value = [['decay',0.9],
                      ['epsilon', 0.00001],
                      ['act', 'identity'],
-                     ['alpha', 0.1]]
+                     ['act_alpha', 0.1]]
     def setup(self):
         for v in self.default_value:
             key = v[0]
